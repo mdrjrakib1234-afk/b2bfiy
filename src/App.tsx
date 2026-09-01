@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Phone, Mail, Facebook, Instagram, Linkedin, MessageSquare, ShieldAlert, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -28,17 +28,22 @@ import IntroSplash from "./components/IntroSplash";
 import SiteBackground from "./components/SiteBackground";
 
 // Pages
+// Home is kept as an eager import since it's the most common landing page —
+// no extra network round trip / loading flash for the majority of visitors.
 import Home from "./pages/Home";
-import Services from "./pages/Services";
-import Portfolio from "./pages/Portfolio";
-import ProjectDetail from "./pages/ProjectDetail";
-import Packages from "./pages/Packages";
-import About from "./pages/About";
-import FreeAudit from "./pages/FreeAudit";
-import Contact from "./pages/Contact";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Terms from "./pages/Terms";
-import Admin from "./pages/Admin";
+// Everything else is code-split: each page (and whatever it alone pulls in,
+// e.g. Admin's recharts-based analytics chart) ships as its own chunk that
+// only loads when a visitor actually navigates there.
+const Services = lazy(() => import("./pages/Services"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Packages = lazy(() => import("./pages/Packages"));
+const About = lazy(() => import("./pages/About"));
+const FreeAudit = lazy(() => import("./pages/FreeAudit"));
+const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Admin = lazy(() => import("./pages/Admin"));
 
 // Helper: Safe LocalStorage set to prevent QuotaExceededError
 export function safeSetLocalStorage(key: string, value: string): boolean {
@@ -668,7 +673,15 @@ export default function App() {
 
       {/* 2. ACTIVE MAIN PAGE VIEW */}
       <main className="flex-grow">
-        {renderPage()}
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="w-10 h-10 border-4 border-[#FF2D2D] border-t-transparent rounded-full animate-spin" />
+            </div>
+          }
+        >
+          {renderPage()}
+        </Suspense>
       </main>
 
       {/* 4. MULTI-COLUMN PROFESSIONAL FOOTER */}
